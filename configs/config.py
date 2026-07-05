@@ -18,13 +18,7 @@ PATHOLOGY_CLASS_NAMES = ["Benign", "Malignant"]
 NUM_LESION_CLASSES = 2
 NUM_PATHOLOGY_CLASSES = 2
 
-MODEL_NAMES = [
-    "resnet18",
-    "densenet121",
-    "efficientnet_b0",
-    "mobilenet_v3_small",
-]
-
+MODEL_NAMES = ["resnet18", "densenet121", "efficientnet_b0", "mobilenet_v3_small"]
 INPUT_MODES = ["cropped"]
 
 IMAGE_SIZE = 224
