@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Research-orange)
 
-Multi-task Deep Learning for Simultaneous Breast Lesion Type and Pathology Classification using Mammography Images
+Multi-task Deep Learning for Simultaneous Lesion Type and Pathology Classification from Mammography Images
 
 A PyTorch-based multi-task learning framework for automated mammography analysis on the **CBIS-DDSM** dataset.
 
@@ -30,7 +30,7 @@ Mammography-MTL is a multi-task deep learning framework designed for breast canc
 
 Instead of training separate models for lesion type classification and pathology classification, this project uses a shared CNN backbone with two task-specific classification heads. The shared representation allows the model to learn mammographic features that are useful for both tasks in a single forward pass.
 
-The framework supports training and evaluation across multiple pretrained CNN backbones, generates publication-style evaluation figures, and provides Grad-CAM explainability for visual interpretation of model predictions.
+The framework supports training and evaluation across multiple pretrained CNN backbones, generates comprehensive evaluation visualizations, and provides Grad-CAM explainability for visual interpretation of model predictions.
 
 ---
 
@@ -55,30 +55,33 @@ The framework supports training and evaluation across multiple pretrained CNN ba
 - Automatic checkpoint and metadata generation
 - Clean modular PyTorch project structure
 
-  ---
+---
 
 # Dataset
 
 This project uses the publicly available **CBIS-DDSM (Curated Breast Imaging Subset of DDSM)** dataset.
 
-CBIS-DDSM is one of the most widely used benchmark datasets for computer-aided breast cancer diagnosis from mammography images.
+Official dataset:
+**[CBIS-DDSM (TCIA)](https://www.cancerimagingarchive.net/collection/cbis-ddsm/)**
 
-The dataset contains two major lesion categories:
+CBIS-DDSM is one of the most widely used benchmark datasets for computer-aided breast cancer diagnosis using mammography images.
+
+The dataset contains two primary lesion categories:
 
 - Calcification
 - Mass
 
-Each case is annotated with:
+Each case includes:
 
-- Lesion category
-- Pathology label
-- ROI information
-- Cropped lesion images
-- Original mammography images
+- Lesion type annotation
+- Pathology label (Benign / Malignant)
+- Region of Interest (ROI) annotation
+- Cropped lesion image
+- Full mammography image
 
-In this project, only the **cropped lesion images** are used as model inputs.
+In this project, only the **cropped lesion images** are used as input to the proposed multi-task learning framework.
 
-> Dataset ownership, licensing, and citation requirements belong to the original CBIS-DDSM authors.
+> Dataset ownership, licensing, and citation requirements remain with the original CBIS-DDSM authors.
 
 ---
 
@@ -128,39 +131,39 @@ Compared with training two separate CNN models, the proposed framework:
 ```text
 Mammography-MTL
 │
-├── assets/
+├── assets/            README figures and visualizations
 │   └── results/
 │
-├── checkpoints/
+├── checkpoints/       Saved model checkpoints
 │
-├── configs/
+├── configs/           Configuration files
 │   └── config.py
 │
-├── data/
+├── data/              Dataset preparation and data loading
 │   ├── dataset.py
 │   ├── prepare_data.py
 │   └── transforms.py
 │
-├── models/
+├── models/            Network architectures and Grad-CAM
 │   ├── model.py
 │   └── gradcam.py
 │
-├── src/
+├── src/               Training, evaluation and visualization
 │   ├── train.py
 │   ├── evaluate.py
 │   ├── metrics.py
 │   ├── utils.py
 │   └── visualize.py
 │
-├── outputs/
+├── outputs/           Generated experiment results
 │
-├── main.py
+├── main.py            Main training pipeline
 ├── requirements.txt
 ├── LICENSE
 └── README.md
 ```
 
-The repository follows a modular design to simplify experimentation, maintenance, and future extension.
+The repository follows a modular and scalable structure, making it easy to extend the framework with new datasets, backbone architectures, evaluation metrics, and visualization methods.
 
 ---
 
@@ -271,29 +274,17 @@ The backbone can be selected through the project configuration without modifying
 
 ---
 
-## Architecture
+## Overall Architecture
 
-```text
-Input Mammography Image (224 × 224 × 3)
-                 │
-                 ▼
-     Pretrained CNN Backbone
-      (Shared Feature Extractor)
-                 │
-                 ▼
-        Shared Feature Vector
-                 │
-        ┌────────┴────────┐
-        │                 │
-        ▼                 ▼
- Lesion Classification   Pathology Classification
-        Head                    Head
-        │                        │
-        ▼                        ▼
- Calcification / Mass     Benign / Malignant
-```
+<p align="center">
+  <img src="assets/results/architecture/model_architecture.png" alt="Model Architecture" width="800">
+</p>
 
-Both prediction heads are optimized jointly during training while sharing the same backbone representation.
+<p align="center">
+  <em>Overview of the proposed multi-task learning framework. A shared ImageNet-pretrained CNN backbone extracts feature representations that are simultaneously used for lesion type and pathology classification.</em>
+</p>
+
+The network employs a shared feature extractor followed by two independent classification heads. Both tasks are jointly optimized during training while sharing the same visual representation, enabling efficient multi-task learning with a single forward pass.
 
 ---
 
@@ -352,7 +343,7 @@ The proposed framework is evaluated independently on both classification tasks u
 
 ## Lesion Classification
 
-The following metrics are reported:
+The following evaluation metrics are reported:
 
 - Accuracy
 - Balanced Accuracy
@@ -384,32 +375,33 @@ The same evaluation protocol is adopted for pathology prediction:
 
 ## Overall Multi-task Score
 
-To compare different backbone architectures fairly, a combined multi-task score is computed by aggregating the performance of both prediction tasks.
+To enable a fair comparison between different backbone architectures, an overall multi-task score is computed by jointly considering the performance of both lesion type and pathology classification tasks.
 
-This score is used for model selection during validation and for ranking the final experimental results.
+This score is used as the primary criterion for model selection and final ranking of all experiments.
 
 ---
 
 # Experimental Results
 
-Four ImageNet-pretrained CNN backbones were evaluated under the same experimental protocol.
+Four ImageNet-pretrained CNN backbones were evaluated under identical preprocessing, training, and evaluation settings to ensure a fair comparison.
 
-The comparison includes:
+The evaluated backbone networks are:
 
 - ResNet18
-- EfficientNet-B0
 - DenseNet121
+- EfficientNet-B0
 - MobileNetV3-Small
 
-All models were trained using identical preprocessing, optimization strategy, and evaluation protocol to ensure a fair comparison.
+## Performance Comparison
 
-Among the evaluated architectures, **ResNet18** achieved the highest overall multi-task performance and was selected as the final model.
+| Backbone | Input | Combined Score | Lesion Acc. | Pathology Acc. | Training Time |
+|-----------|:-----:|---------------:|------------:|---------------:|--------------:|
+| **ResNet18** | Cropped | **0.8256** | 89.63% | **73.30%** | **6.19 min** |
+| EfficientNet-B0 | Cropped | 0.8250 | **92.33%** | 69.32% | 6.59 min |
+| DenseNet121 | Cropped | 0.8104 | 90.62% | 68.75% | 8.99 min |
+| MobileNetV3-Small | Cropped | 0.7963 | 88.35% | 68.32% | 5.20 min |
 
-### Best Performing Model
-
-| Backbone | Input | Combined Score |
-|-----------|-------|---------------:|
-| **ResNet18** | Cropped | **0.8256** |
+Although EfficientNet-B0 achieved the highest lesion classification accuracy, ResNet18 delivered the best balance between lesion type and pathology prediction. Consequently, it achieved the highest combined multi-task score and was selected as the final model.
 
 ---
 
@@ -420,28 +412,42 @@ Among the evaluated architectures, **ResNet18** achieved the highest overall mul
 | Metric | Score |
 |---------|------:|
 | Accuracy | **89.63%** |
+| Precision | **92.01%** |
+| Recall (Sensitivity) | **88.36%** |
+| Specificity | **91.10%** |
 | F1-score | **90.15%** |
+| MCC | **0.7929** |
 | ROC-AUC | **96.51%** |
+| Average Precision (AP) | **97.11%** |
+
+---
 
 ### Pathology Classification
 
 | Metric | Score |
 |---------|------:|
 | Accuracy | **73.30%** |
+| Precision | **65.38%** |
+| Recall (Sensitivity) | **67.75%** |
+| Specificity | **76.87%** |
 | F1-score | **66.55%** |
+| MCC | **0.4436** |
 | ROC-AUC | **79.24%** |
+| Average Precision (AP) | **72.60%** |
 
-Training Time (ResNet18): **6.19 minutes**
+---
+
+**Training Time:** **6.19 minutes**
 
 ---
 
 # Backbone Comparison
 
-The proposed framework was evaluated using four different ImageNet-pretrained CNN backbones under identical experimental settings.
+The following figures provide a visual comparison of the four evaluated backbone architectures.
 
-The comparison demonstrates that while all architectures achieve strong lesion classification performance, their ability to jointly optimize both lesion type and pathology prediction differs.
+The combined multi-task score summarizes the overall performance across both prediction tasks, while the accompanying plots illustrate the individual lesion classification accuracy and pathology classification accuracy for each model.
 
-Overall, **ResNet18** achieved the highest combined multi-task score, providing the best trade-off between the two prediction tasks.
+Overall, ResNet18 achieved the strongest balance between both tasks, making it the most effective backbone for this multi-task framework.
 
 ---
 
@@ -451,7 +457,9 @@ Overall, **ResNet18** achieved the highest combined multi-task score, providing 
   <img src="assets/results/comparison/combined_score.png" width="700">
 </p>
 
-*Comparison of the overall multi-task score across all evaluated backbone networks.*
+<p align="center">
+  <em>Overall multi-task performance comparison across all evaluated backbone networks.</em>
+</p>
 
 ---
 
@@ -461,7 +469,9 @@ Overall, **ResNet18** achieved the highest combined multi-task score, providing 
   <img src="assets/results/comparison/lesion_accuracy.png" width="700">
 </p>
 
-*Comparison of lesion type classification accuracy for all backbone architectures.*
+<p align="center">
+  <em>Comparison of lesion type classification accuracy across different backbone architectures.</em>
+</p>
 
 ---
 
@@ -471,7 +481,9 @@ Overall, **ResNet18** achieved the highest combined multi-task score, providing 
   <img src="assets/results/comparison/pathology_accuracy.png" width="700">
 </p>
 
-*Comparison of pathology classification accuracy for all evaluated models.*
+<p align="center">
+  <em>Comparison of pathology classification accuracy across different backbone architectures.</em>
+</p>
 
 ---
 
@@ -498,7 +510,7 @@ Green titles indicate correct predictions, while red titles indicate misclassifi
   <img src="assets/results/predictions/sample_predictions.png" width="900">
 </p>
 
-*Example predictions generated by the proposed multi-task framework.*
+*Visualization of lesion type and pathology predictions generated by the best-performing multi-task model.*
 
 ---
 
@@ -512,7 +524,7 @@ Confusion matrices provide a detailed analysis of classification performance by 
   <img src="assets/results/confusion_matrix/lesion_confusion_matrix.png" width="450">
 </p>
 
-*Confusion matrix for lesion type classification.*
+*Confusion matrix for lesion type classification on the test set.*
 
 ---
 
@@ -522,7 +534,7 @@ Confusion matrices provide a detailed analysis of classification performance by 
   <img src="assets/results/confusion_matrix/pathology_confusion_matrix.png" width="450">
 </p>
 
-*Confusion matrix for pathology classification.*
+*Confusion matrix for pathology classification on the test set.*
 
 ---
 
@@ -538,6 +550,8 @@ Higher AUC values indicate stronger discriminative capability.
   <img src="assets/results/roc/lesion_roc.png" width="450">
 </p>
 
+*ROC curve for lesion type classification.*
+
 ---
 
 ### Pathology Classification
@@ -545,6 +559,8 @@ Higher AUC values indicate stronger discriminative capability.
 <p align="center">
   <img src="assets/results/roc/pathology_roc.png" width="450">
 </p>
+
+*ROC curve for pathology classification.*
 
 ---
 
@@ -554,6 +570,8 @@ Higher AUC values indicate stronger discriminative capability.
   <img src="assets/results/roc/lesion_roc_comparison.png" width="700">
 </p>
 
+*Comparison of lesion classification ROC curves across all evaluated backbone architectures.*
+
 ---
 
 ### Pathology Backbone Comparison
@@ -561,6 +579,8 @@ Higher AUC values indicate stronger discriminative capability.
 <p align="center">
   <img src="assets/results/roc/pathology_roc_comparison.png" width="700">
 </p>
+
+*Comparison of pathology classification ROC curves across all evaluated backbone architectures.*
 
 ---
 
@@ -584,7 +604,7 @@ Average Precision (AP) summarizes the area under each PR curve and complements R
   <img src="assets/results/precision_recall/pathology_pr_curve.png" width="450">
 </p>
 
-*Precision–Recall curves obtained using the best-performing multi-task model.*
+*Precision–Recall curves of the best-performing multi-task model.*
 
 ---
 
@@ -594,14 +614,14 @@ Understanding **why** a deep learning model makes a particular prediction is as 
 
 To improve interpretability, Grad-CAM (Gradient-weighted Class Activation Mapping) is applied to the best-performing model.
 
-Grad-CAM highlights the image regions that contribute most strongly to the network's decision, allowing visual inspection of whether the model focuses on clinically meaningful lesion regions.
+Grad-CAM highlights the image regions that contribute most strongly to the network's predictions, allowing visual inspection of whether the model focuses on clinically meaningful lesion regions.
 
 <p align="center">
   <img src="assets/results/gradcam/pathology_gradcam_correct.png" width="850">
 </p>
 
 <p align="center">
-  <em>Grad-CAM visualization for correctly classified pathology samples.</em>
+  <em>Grad-CAM visualization highlighting regions contributing to correct pathology predictions.</em>
 </p>
 
 The visualization demonstrates that the model primarily attends to lesion regions rather than surrounding background tissue, providing additional confidence in the learned representations.
@@ -654,6 +674,7 @@ Run the complete experimental pipeline:
 ```bash
 python main.py
 ```
+The default training configuration can be modified in `configs/config.py` before running the pipeline.
 
 The pipeline automatically performs:
 
@@ -692,19 +713,18 @@ Generated files are stored inside the `outputs/` directory.
 
 # Future Work
 
-Potential future improvements include:
+Potential future directions for this project include:
 
-- Support for Vision Transformer (ViT) backbones
-- Integration of ConvNeXt and Swin Transformer architectures
-- Multi-label breast abnormality prediction
+- Support for additional CNN and Vision Transformer backbones
 - External validation on additional mammography datasets
-- Automatic hyperparameter optimization
+- Automated hyperparameter optimization
+- Cross-validation experiments
 - DICOM image support
-- Clinical decision-support integration
-- Explainability using Grad-CAM++, Score-CAM, and Eigen-CAM
-- Deployment as a web-based inference application
-
-  ---
+- Multi-label breast abnormality prediction
+- Advanced explainability methods (Grad-CAM++, Score-CAM, and Eigen-CAM)
+- Deployment as a lightweight inference application
+  
+---
 
 # License
 
